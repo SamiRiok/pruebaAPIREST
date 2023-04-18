@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruta Protegida</title>
+</head>
+<body>
+    <h1>Ruta Protegida</h1>
+    <div id="app">
+        <h2>Email: </h2>
+    </div>
+    
+    <br/>
+
+    <div id="crearEventos">
+        Evento:    <input type="text" id="evento" required> <br/>
+        Fecha:     <input type="date" id="fecha" required> <br/>
+        Ubicacion: <input type="text" id="ubicacion" required> <br/>
+        <br/>
+        <button id="GuardarEvento" >Guardar Evento</button>
+
+            
+        
+        <br/>
+        <br/>
+        <br/>
+
+        BUSCAR
+        <br/>
+        ubicacion: <input type="text" id="ubicacionSearch" required> <br/>
+        <br/>
+        fecha superior a: <input type="date" id="fechaSearch" required> <br/>
+        <br/>
+        <button id="buscarUbicacion" >Buscar Evento</button>
+
+        <br/>
+        <br/>
+            
+
+    </div>
+
+    <br/>
+
+    <button id="logout">cerrar Sesion</button>
+     
+     <script>
+        const logout = document.getElementById("logout");
+        logout.addEventListener("click", async()=>{
+            const res = await fetch("api/v1/logout",{
+                method: "GET"
+            })
+            document.location.reload();
+        })
+
+        document.addEventListener("DOMContentLoaded", async (e)=>{
+            try {
+                //VALIDAR USUARIO
+                const resToken = await fetch("/api/v1/refresh", {
+                    method: "GET",
+                    credentials: "include",
+                })
+
+                const {token} = await resToken.json();
+
+                const res = await fetch("/api/v1/protected",{
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json",
+                    },
+                    credentials: 'include',
+                });
+                console.log(res.ok, res.status)
+                const data = await res.json();
+                const crearEventos = document.getElementById("crearEventos");
+                if(res.ok){
+                    document.getElementById("app").textContent = data.email;
+                    
+                }
+                else{
+                    crearEventos.style.display = "none";
+                }
+            } catch (error) {
+            }
+
+            //INTRODUCIR EVENTOS
+            const guardar = document.getElementById("GuardarEvento");
+
+            guardar.addEventListener("click", async ()=>{
+                try {
+                
+                    const evento = document.getElementById("evento")
+                    const ubicacion = document.getElementById("ubicacion")
+                    const fecha = document.getElementById("fecha");
+
+                    if (evento.value == "" || ubicacion.value == "" || fecha.value == "") return
+                    
+                    const resToken = await fetch("/api/v1/refresh", {
+                        method: "GET",
+                        credentials: "include",
+                    })
+
+                    const {token} = await resToken.json();
+
+                    const res = await fetch("/api/v1/createEvent",{
+                        method: "POST",
+                        headers: {
+                            "Authorization": "Bearer " + token,
+                            "Content-Type": "application/json",
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            evento: evento.value,
+                            fecha: fecha.value,
+                            ubicacion: ubicacion.value
+                        }),
+                    });
+                    console.log(res.ok, res.status)
+
+                    if(!res.ok) return
+                    else guardar.textContent = "OK"
+
+                } catch (error) {
+                    console.log(error)
+                }
+            });
+
+            //BUSCAR POR UBICACION Y FECHA
+            const buscarUbicacion = document.getElementById("buscarUbicacion")
+            buscarUbicacion.addEventListener("click", async ()=>{
+                try {
+                
+                    const eventoUb = document.getElementById("ubicacionSearch")
+                    const buscarFecha = document.getElementById("fechaSearch")
+
+                    if (eventoUb.value == "" || buscarFecha.value == "") return
+
+                    const resToken = await fetch("/api/v1/refresh", {
+                        method: "GET",
+                        credentials: "include",
+                    })
+
+                    const {token} = await resToken.json();
+
+                    const res = await fetch("/api/v1/getEvent?ubicacion=" + eventoUb.value + "&fecha="+ buscarFecha.value, {
+                        method: "GET",
+                        headers: {
+                            "Authorization": "Bearer " + token,
+                            "Content-Type": "application/json",
+                        },
+                        credentials: 'include'
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const events = data.events;
+                        const eventosRecuperados = events.map(event => {
+                            return {
+                                evento: event.evento,
+                                fecha: event.fecha,
+                                ubicacion: event.ubicacion
+                            };
+                        });
+                        buscarUbicacion.textContent = "Resultado en consola"
+                        console.log(eventosRecuperados);
+                    } else {
+                        console.error("Error al obtener eventos:", res.status);
+                    }
+                } catch (error) {
+                    console.error("Error al realizar la solicitud:", error);
+                }
+            });
+            
+        })
+
+     </script>
+</body>
+</html>

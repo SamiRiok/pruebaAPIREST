@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+<body>
+    <form id="form">
+        <input type="email" value="samiu@test.es" id="email">
+        <input type="password" value="123123" id="password">
+        <input type="submit" value="Acceder">
+    </form>
+    <br/>
+    <label style="color: green;">PUEDES CREAR TUS USUARIOS DESDE POSTMAN Y PODRAS INICIAR SESION CON ELLOS. SI NO AQUI TIENES UNO DE EJEMPLO</label>
+
+
+
+    <script>
+        const form = document.getElementById("form");
+        const password = document.getElementById("password");
+        const email = document.getElementById("email");
+
+        form.addEventListener("submit", async (e)=>{
+            e.preventDefault();
+            try {
+                const res = await fetch("/api/v1/login",{
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        email: email.value,
+                        password: password.value
+                    }),
+                });
+                console.log(res.ok, res.status)
+
+                if(!res.ok) return
+
+                const {token} = await res.json();
+                document.location.href = "protected.html";
+            } catch (error) {
+                console.log(error);
+            }
+        })
+    </script>
+</body>
+</html>
